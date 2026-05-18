@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "xauusd-trading": {
+      "source": "huynguyen03dev/xauusd-trading",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "5ecc7b8308a9a33a56eebeb5f597f3153d05eb094570fab785db435a4acec1ee"
+    }
+  }
+}
