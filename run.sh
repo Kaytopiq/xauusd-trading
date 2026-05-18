@@ -52,6 +52,19 @@ case "${1:-help}" in
     monitor)
         bash scripts/monitor.sh | tee >(save_output "monitor")
         ;;
+    monitor-loop|loop)
+        bash scripts/monitor_loop.sh
+        ;;
+    report)
+        bash scripts/report.sh
+        ;;
+    notify)
+        shift
+        bash scripts/notify.sh "$@"
+        ;;
+    setup)
+        bash setup.sh
+        ;;
     full)
         ts=$(date +%Y%m%d_%H%M%S)
         file="analysis/full_${ts}.txt"
@@ -91,11 +104,16 @@ case "${1:-help}" in
         echo "  news               News/economic calendar gate check"
         echo "  log                Log a trade result"
         echo "  monitor            Market state detection (NEUTRAL/WATCHING/SIGNAL)"
+        echo "  monitor-loop       🔄 Continuous monitoring (runs until SIGNAL)"
+        echo "  report             📄 Generate analysis report"
+        echo "  notify [msg]       🔔 Send notification (local + WhatsApp)"
+        echo "  setup              ⚙️  One-click environment setup"
         echo "  full               Run everything + save to analysis/"
         echo ""
         echo "Examples:"
-        echo "  bash run.sh monitor"
+        echo "  bash run.sh monitor-loop"
         echo "  bash run.sh signal"
+        echo "  bash run.sh report"
         echo "  bash run.sh session"
         echo "  bash run.sh news"
         echo "  bash run.sh full"
