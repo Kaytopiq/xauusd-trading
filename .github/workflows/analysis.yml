@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install yfinance mplfinance pandas
+          pip install yfinance mplfinance pandas requests
 
       - name: Run analysis
         id: analysis
@@ -72,7 +72,6 @@ print('✅ Telegram sent' if r.json().get('ok') else f'❌ Failed: {r.text}')
 
       - name: Generate chart
         run: |
-          pip install mplfinance yfinance pandas
           bash scripts/chart.sh 1h 6d "chart_latest"
 
       - name: Send chart to Telegram
