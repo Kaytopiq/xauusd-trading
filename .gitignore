@@ -6,6 +6,12 @@ config/api_keys*
 data/*.csv
 data/*.json
 analysis/*.json
+analysis/*.txt
+analysis/*.md
+
+# Charts
+analysis/*.png
+analysis/*.jpg
 
 # OS
 .DS_Store
