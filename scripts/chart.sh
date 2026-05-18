@@ -111,7 +111,7 @@ try:
     
     # Save
     os.makedirs('analysis', exist_ok=True)
-    fig.savefig('$FILENAME', dpi=100, bbox_inches='tight')
+    fig.savefig('$FILENAME', dpi=100)
     plt = fig  # keep reference
     import matplotlib.pyplot as plt
     plt.close(fig)
