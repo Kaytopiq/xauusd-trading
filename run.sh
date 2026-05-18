@@ -40,9 +40,18 @@ case "${1:-help}" in
     session)
         bash scripts/session.sh
         ;;
+    signal)
+        bash scripts/signal.sh "${2:-save}"
+        ;;
+    news)
+        bash scripts/news_gate.sh
+        ;;
+    log)
+        bash scripts/log_trade.sh
+        ;;
     full)
-        local ts=$(date +%Y%m%d_%H%M%S)
-        local file="analysis/full_${ts}.txt"
+        ts=$(date +%Y%m%d_%H%M%S)
+        file="analysis/full_${ts}.txt"
         echo "========================================"
         echo "  XAUUSD FULL ANALYSIS — $(date)"
         echo "========================================"
@@ -75,11 +84,16 @@ case "${1:-help}" in
         echo "  candles [int] [n]  Real-time candles (needs API key)"
         echo "  gold [int] [ran]   Yahoo Finance fallback (no key, delayed)"
         echo "  session            Check market session"
+        echo "  signal             Quick signal snapshot + auto-save"
+        echo "  news               News/economic calendar gate check"
+        echo "  log                Log a trade result"
         echo "  full               Run everything + save to analysis/"
         echo ""
         echo "Examples:"
         echo "  bash run.sh price"
+        echo "  bash run.sh signal"
         echo "  bash run.sh session"
+        echo "  bash run.sh news"
         echo "  bash run.sh full"
         echo "  bash run.sh gold 5m 1d 20"
         ;;

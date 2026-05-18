@@ -1,0 +1,59 @@
+//@version=6
+indicator("XAUUSD Support/Resistance Scalper", overlay=true, timeframe="")
+
+// === INPUTS ===
+lookback      = input.int(20, "Swing Lookback")
+wickBodyRatio = input.float(2.0, "Min Wick:Body Ratio")
+bbLength      = input.int(20, "Bollinger Length")
+bbStd         = input.float(2.0, "Bollinger StdDev")
+atrLen        = input.int(14, "ATR Length")
+
+// === SWING HIGHS / LOWS ===
+swHigh = ta.pivothigh(lookback, lookback)
+swLow  = ta.pivotlow(lookback, lookback)
+
+// === BOLLINGER BANDS (dynamic S/R) ===
+basis = ta.sma(close, bbLength)
+bbUpper = basis + bbStd * ta.stdev(close, bbLength)
+bbLower = basis - bbStd * ta.stdev(close, bbLength)
+
+// === REJECTION WICK DETECTION ===
+// Bullish rejection: long lower wick, small body (buyers stepping in)
+bullishRejection = (low - math.min(open, close)) > (math.abs(close - open) * wickBodyRatio) and close > open
+// Bearish rejection: long upper wick, small body (sellers stepping in)
+bearishRejection = (math.max(open, close) - high) > (math.abs(close - open) * wickBodyRatio) and close < open
+
+// === SUPPORT BOUNCE ===
+nearLowerBB = close <= bbLower * 1.002
+supportBounce = nearLowerBB and bullishRejection
+
+// === RESISTANCE REJECTION ===
+nearUpperBB = close >= bbUpper * 0.998
+resistanceRejection = nearUpperBB and bearishRejection
+
+// === STOP HUNT REVERSAL ===
+// Sweeps recent swing low then closes back above
+stopHuntLong = low < swLow and close > swLow
+// Sweeps recent swing high then closes back below
+stopHuntShort = high > swHigh and close < swHigh
+
+// === PLOTS ===
+plot(basis, "BB Mid", color.blue, 1)
+plot(bbUpper, "BB Upper", color.gray, 1)
+plot(bbLower, "BB Lower", color.gray, 1)
+
+// Plot swing points
+plotshape(swHigh, "Swing High", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.tiny)
+plotshape(swLow, "Swing Low", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+
+// === SIGNAL LABELS ===
+plotshape(supportBounce, "BUY: Support Bounce", style=shape.labelup, location=location.belowbar, color=color.new(color.green, 40), text="BUY", textcolor=color.white, size=size.small)
+plotshape(resistanceRejection, "SELL: Resistance Rejection", style=shape.labeldown, location=location.abovebar, color=color.new(color.red, 40), text="SELL", textcolor=color.white, size=size.small)
+plotshape(stopHuntLong, "BUY: Stop Hunt", style=shape.labelup, location=location.belowbar, color=color.new(color.lime, 40), text="HUNT BUY", textcolor=color.white, size=size.small)
+plotshape(stopHuntShort, "SELL: Stop Hunt", style=shape.labeldown, location=location.abovebar, color=color.new(color.orange, 40), text="HUNT SELL", textcolor=color.white, size=size.small)
+
+// === ALERTS ===
+alertcondition(supportBounce, "Support Bounce BUY", "XAUUSD: Support bounce + rejection wick")
+alertcondition(resistanceRejection, "Resistance Rejection SELL", "XAUUSD: Resistance rejection wick")
+alertcondition(stopHuntLong, "Stop Hunt Reversal BUY", "XAUUSD: Stop hunt reversal LONG")
+alertcondition(stopHuntShort, "Stop Hunt Reversal SELL", "XAUUSD: Stop hunt reversal SHORT")

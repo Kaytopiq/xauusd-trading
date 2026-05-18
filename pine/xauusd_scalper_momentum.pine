@@ -1,0 +1,81 @@
+//@version=6
+indicator("XAUUSD Momentum Reversal Scalper", overlay=false, timeframe="")
+
+// === INPUTS ===
+rsiLen    = input.int(14, "RSI Length")
+stochK    = input.int(14, "Stochastic K")
+stochD    = input.int(3, "Stochastic D")
+cciLen    = input.int(20, "CCI Length")
+atrLen    = input.int(14, "ATR Length")
+
+// === INDICATORS ===
+rsi     = ta.rsi(close, rsiLen)
+stochKVal = ta.sma(ta.stoch(close, high, low, stochK), stochD)
+stochDVal = ta.sma(stochKVal, stochD)
+cci     = ta.cci(close, cciLen)
+atr     = ta.atr(atrLen)
+
+// === EXTREME ZONES (from SKILL.md) ===
+// | Indicator | Extreme LONG Zone | Extreme SHORT Zone |
+// | Stoch K   | < 10              | > 90               |
+// | CCI       | < -100            | > +100             |
+// | RSI       | < 30              | > 70               |
+
+stochExtremeLong  = stochKVal < 10
+stochExtremeShort = stochKVal > 90
+cciExtremeLong    = cci < -100
+cciExtremeShort   = cci > 100
+rsiExtremeLong    = rsi < 30
+rsiExtremeShort   = rsi > 70
+
+// === MULTI-INDICATOR CONFLUENCE ===
+// When 2+ indicators are extreme simultaneously → high probability bounce
+extremeLongScore  = (stochExtremeLong ? 1 : 0) + (cciExtremeLong ? 1 : 0) + (rsiExtremeLong ? 1 : 0)
+extremeShortScore = (stochExtremeShort ? 1 : 0) + (cciExtremeShort ? 1 : 0) + (rsiExtremeShort ? 1 : 0)
+
+highProbBounce  = extremeLongScore >= 2
+highProbReject  = extremeShortScore >= 2
+
+// === CROSS DETECTION ===
+stochCrossUp  = ta.crossover(stochKVal, stochDVal) and stochKVal < 30
+stochCrossDn  = ta.crossunder(stochKVal, stochDVal) and stochKVal > 70
+
+// === PLOTS ===
+hline(70, "Overbought", color.red, hline.style_dashed)
+hline(30, "Oversold", color.green, hline.style_dashed)
+hline(50, "Mid", color.gray, hline.style_dotted)
+
+plot(rsi, "RSI", color.blue, 2)
+plot(stochKVal, "Stoch K", color.purple, 1)
+plot(stochDVal, "Stoch D", color.fuchsia, 1)
+
+// === SIGNAL MARKERS ===
+plotshape(highProbBounce and stochCrossUp, "HIGH PROB BOUNCE", style=shape.triangleup, location=location.bottom, color=color.green, size=size.large)
+plotshape(highProbReject and stochCrossDn, "HIGH PROB REJECT", style=shape.triangledown, location=location.top, color=color.red, size=size.large)
+
+// === INDICATOR TABLE ===
+var table indTable = table.new(position.top_right, 4, 4, border_width=1)
+if barstate.islast
+    table.cell(indTable, 0, 0, "Indicator", bgcolor=color.gray, text_color=color.white)
+    table.cell(indTable, 1, 0, "Value", bgcolor=color.gray, text_color=color.white)
+    table.cell(indTable, 2, 0, "Zone", bgcolor=color.gray, text_color=color.white)
+    table.cell(indTable, 3, 0, "Score", bgcolor=color.gray, text_color=color.white)
+    
+    table.cell(indTable, 0, 1, "RSI", text_color=color.white)
+    table.cell(indTable, 1, 1, str.tostring(rsi, "#.#"), text_color=color.white)
+    table.cell(indTable, 2, 1, rsi < 30 ? "OVERSOLD" : rsi > 70 ? "OVERBOUGHT" : "", text_color=rsi < 30 ? color.green : rsi > 70 ? color.red : color.gray)
+    table.cell(indTable, 3, 1, str.tostring(rsiExtremeLong ? 1 : 0), text_color=color.white)
+    
+    table.cell(indTable, 0, 2, "Stoch K", text_color=color.white)
+    table.cell(indTable, 1, 2, str.tostring(stochKVal, "#.#"), text_color=color.white)
+    table.cell(indTable, 2, 2, stochKVal < 10 ? "OVERSOLD" : stochKVal > 90 ? "OVERBOUGHT" : "", text_color=stochKVal < 10 ? color.green : stochKVal > 90 ? color.red : color.gray)
+    table.cell(indTable, 3, 2, str.tostring(stochExtremeLong ? 1 : 0), text_color=color.white)
+    
+    table.cell(indTable, 0, 3, "CCI", text_color=color.white)
+    table.cell(indTable, 1, 3, str.tostring(cci, "#.#"), text_color=color.white)
+    table.cell(indTable, 2, 3, cci < -100 ? "OVERSOLD" : cci > 100 ? "OVERBOUGHT" : "", text_color=cci < -100 ? color.green : cci > 100 ? color.red : color.gray)
+    table.cell(indTable, 3, 3, str.tostring(cciExtremeLong ? 1 : 0), text_color=color.white)
+
+// === ALERTS ===
+alertcondition(highProbBounce, "High Prob Bounce BUY", "XAUUSD: 2+ oversold indicators, bounce imminent")
+alertcondition(highProbReject, "High Prob Reject SELL", "XAUUSD: 2+ overbought indicators, rejection imminent")
