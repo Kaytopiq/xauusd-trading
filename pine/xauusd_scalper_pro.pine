@@ -1,0 +1,154 @@
+//@version=6
+indicator("XAUUSD Scalper PRO", overlay=true, timeframe="")
+
+// ============================================
+// XAUUSD Scalper PRO — Multi-Indicator Strategy
+// Supertrend (trend) + RSI/Stoch (momentum) + BB (volatility) + Volume
+// ============================================
+
+// === INPUTS ===
+stPeriod   = input.int(10, "Supertrend ATR Period")
+stMulti    = input.float(3.0, "Supertrend Multiplier")
+rsiLen     = input.int(14, "RSI Length")
+stochK     = input.int(14, "Stochastic K")
+stochD     = input.int(3, "Stochastic Smooth")
+bbLen      = input.int(20, "BB Length")
+bbStd      = input.float(2.0, "BB StdDev")
+showLabels = input.bool(true, "Show Signal Labels")
+showSwing  = input.bool(true, "Show Swing Points")
+swingLen   = input.int(10, "Swing Lookback")
+
+// === INDICATORS ===
+// Supertrend
+[stTrend, stDir] = ta.supertrend(stMulti, stPeriod)
+
+// RSI
+rsi = ta.rsi(close, rsiLen)
+
+// Stochastic
+stochKVal = ta.sma(ta.stoch(close, high, low, stochK), stochD)
+stochDVal = ta.sma(stochKVal, stochD)
+
+// Bollinger Bands
+[bbMid, bbUpper, bbLower] = ta.bb(close, bbLen, bbStd)
+
+// Volume spike
+volAvg = ta.sma(volume, 20)
+volSpike = volume > volAvg * 1.5
+
+// === SIGNAL DETECTION ===
+// 1. Supertrend direction
+trendUp = stDir > 0
+trendDn = stDir < 0
+
+// 2. BB position
+nearBBLower = close <= bbLower * 1.003
+nearBBUpper = close >= bbUpper * 0.997
+
+// 3. Extreme momentum
+rsiOversold   = rsi < 30
+rsiOverbought = rsi > 70
+stochOversold   = stochKVal < 20
+stochOverbought = stochKVal > 80
+
+// 4. Stochastic cross
+stochCrossUp = ta.crossover(stochKVal, stochDVal)
+stochCrossDn = ta.crossunder(stochKVal, stochDVal)
+
+// === SIGNALS ===
+// STRONG BUY: Trend up + price near BB lower + oversold + stoch cross
+strongBuy  = trendUp and nearBBLower and (rsiOversold or stochOversold) and stochCrossUp
+
+// STRONG SELL: Trend down + price near BB upper + overbought + stoch cross
+strongSell = trendDn and nearBBUpper and (rsiOverbought or stochOverbought) and stochCrossDn
+
+// WEAK BUY: Trend up + near BB lower (no extreme momentum)
+weakBuy   = trendUp and nearBBLower and not strongBuy
+
+// WEAK SELL: Trend down + near BB upper (no extreme momentum)
+weakSell  = trendDn and nearBBUpper and not strongSell
+
+// STOP HUNT REVERSAL (High Probability)
+swHigh = showSwing ? ta.pivothigh(swingLen, swingLen) : na
+swLow  = showSwing ? ta.pivotlow(swingLen, swingLen) : na
+
+stopHuntBuy  = trendUp and low < swLow and close > swLow and stochOversold
+stopHuntSell = trendDn and high > swHigh and close < swHigh and stochOverbought
+
+// === PLOTS ===
+// Supertrend line
+plot(stTrend, "Supertrend", color = stDir > 0 ? color.new(color.green, 30) : color.new(color.red, 30), linewidth=2)
+
+// Bollinger Bands
+plot(bbMid, "BB Mid", color.blue, 1)
+plot(bbUpper, "BB Upper", color.gray, 1)
+plot(bbLower, "BB Lower", color.gray, 1)
+fill(plot(bbUpper), plot(bbLower), color=color.new(color.gray, 90), title="BB Fill")
+
+// Swing points
+plotshape(swHigh, "Swing High", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.tiny)
+plotshape(swLow, "Swing Low", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+
+// === SIGNAL LABELS ===
+if showLabels
+    // Strong signals
+    plotshape(strongBuy, "STRONG BUY", style=shape.labelup, location=location.belowbar,
+              color=color.new(color.green, 30), text="🟢 BUY", textcolor=color.white, size=size.normal)
+    plotshape(strongSell, "STRONG SELL", style=shape.labeldown, location=location.abovebar,
+              color=color.new(color.red, 30), text="🔴 SELL", textcolor=color.white, size=size.normal)
+    
+    // Weak signals
+    plotshape(weakBuy, "WEAK BUY", style=shape.labelup, location=location.belowbar,
+              color=color.new(color.lime, 40), text="BUY?", textcolor=color.white, size=size.small)
+    plotshape(weakSell, "WEAK SELL", style=shape.labeldown, location=location.abovebar,
+              color=color.new(color.orange, 40), text="SELL?", textcolor=color.white, size=size.small)
+    
+    // Stop hunt reversals
+    plotshape(stopHuntBuy, "STOP HUNT BUY", style=shape.labelup, location=location.belowbar,
+              color=color.new(color.green, 20), text="🎯 HUNT", textcolor=color.white, size=size.normal)
+    plotshape(stopHuntSell, "STOP HUNT SELL", style=shape.labeldown, location=location.abovebar,
+              color=color.new(color.red, 20), text="🎯 HUNT", textcolor=color.white, size=size.normal)
+
+// === SIGNAL TABLE ===
+var table sigTable = table.new(position.top_right, 4, 3, border_width=1, border_color=color.gray)
+if barstate.islast
+    // Trend
+    table.cell(sigTable, 0, 0, "Trend", bgcolor=color.gray, text_color=color.white)
+    table.cell(sigTable, 1, 0, stDir > 0 ? "🟢 BULLISH" : "🔴 BEARISH",
+               bgcolor=stDir > 0 ? color.new(color.green, 70) : color.new(color.red, 70), text_color=color.white)
+    
+    // RSI
+    table.cell(sigTable, 0, 1, "RSI", bgcolor=color.gray, text_color=color.white)
+    table.cell(sigTable, 1, 1, str.tostring(rsi, "#.#"),
+               bgcolor=rsi < 30 ? color.green : rsi > 70 ? color.red : color.new(color.gray, 50), text_color=color.white)
+    
+    // Stoch
+    table.cell(sigTable, 0, 2, "Stoch", bgcolor=color.gray, text_color=color.white)
+    table.cell(sigTable, 1, 2, str.tostring(stochKVal, "#.#"),
+               bgcolor=stochKVal < 20 ? color.green : stochKVal > 80 ? color.red : color.new(color.gray, 50), text_color=color.white)
+    
+    // Action recommendation
+    table.cell(sigTable, 2, 0, "Signal", bgcolor=color.gray, text_color=color.white)
+    var sigText = "⚪ WAIT"
+    if strongBuy
+        sigText := "🟢 STRONG BUY"
+    else if strongSell
+        sigText := "🔴 STRONG SELL"
+    else if weakBuy
+        sigText := "🟡 WEAK BUY"
+    else if weakSell
+        sigText := "🟡 WEAK SELL"
+    table.cell(sigTable, 3, 0, sigText, text_color=color.white)
+    
+    table.cell(sigTable, 2, 1, "BB Pos", bgcolor=color.gray, text_color=color.white)
+    bbPos = (close - bbLower) / (bbUpper - bbLower) * 100
+    table.cell(sigTable, 3, 1, str.tostring(bbPos, "#") + "%", text_color=color.white)
+    
+    table.cell(sigTable, 2, 2, "Vol", bgcolor=color.gray, text_color=color.white)
+    table.cell(sigTable, 3, 2, volSpike ? "⬆ HIGH" : "─ NORMAL", text_color=color.white)
+
+// === ALERTS ===
+alertcondition(strongBuy, "STRONG BUY", "XAUUSD: Strong Buy signal (Supertrend UP + BB lower + oversold)")
+alertcondition(strongSell, "STRONG SELL", "XAUUSD: Strong Sell signal (Supertrend DOWN + BB upper + overbought)")
+alertcondition(stopHuntBuy, "Stop Hunt BUY", "XAUUSD: Stop hunt reversal BUY detected")
+alertcondition(stopHuntSell, "Stop Hunt SELL", "XAUUSD: Stop hunt reversal SELL detected")

@@ -58,6 +58,9 @@ case "${1:-help}" in
     report)
         bash scripts/report.sh
         ;;
+    review)
+        bash scripts/review_weekly.sh
+        ;;
     chart)
         INTERVAL="${2:-1h}"
         PERIOD="${3:-3d}"
@@ -111,6 +114,7 @@ case "${1:-help}" in
         echo "  monitor            Market state detection (NEUTRAL/WATCHING/SIGNAL)"
         echo "  monitor-loop       🔄 Continuous monitoring (runs until SIGNAL)"
         echo "  report             📄 Generate analysis report + chart"
+        echo "  review             📊 Weekly review from trade log"
         echo "  chart [int] [per]  📈 Generate candlestick chart (default: 1h 3d)"
         echo "  notify [msg]       🔔 Send notification (local + WhatsApp)"
         echo "  setup              ⚙️  One-click environment setup"
