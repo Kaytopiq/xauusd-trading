@@ -22,51 +22,40 @@ jobs:
           pip install yfinance mplfinance pandas requests
 
       - name: Run analysis
-        id: analysis
         run: |
           echo "## XAUUSD AUTO ANALYSIS" > report.md
           echo "" >> report.md
-          echo "**Waktu:** $(date '+%Y-%m-%d %H:%M UTC')" >> report.md
+          echo "Waktu: $(date '+%Y-%m-%d %H:%M UTC')" >> report.md
           echo "" >> report.md
-
-          echo '```' >> report.md
-          echo "--- SESSION ---" >> report.md
+          echo '--- SESSION ---' >> report.md
           bash scripts/session.sh >> report.md 2>/dev/null
           echo "" >> report.md
-          echo "--- SIGNAL ---" >> report.md
+          echo '--- SIGNAL ---' >> report.md
           bash scripts/signal.sh >> report.md 2>/dev/null
           echo "" >> report.md
-          echo "--- MONITOR ---" >> report.md
+          echo '--- MONITOR ---' >> report.md
           bash scripts/monitor.sh >> report.md 2>/dev/null
-          echo '```' >> report.md
 
-      - name: Send to Telegram
+      - name: Send report to Telegram
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          REPORT=$(cat report.md)
-          python3 -c "
+          python3 << 'PYEOF'
 import requests, os
-
 token = os.environ.get('TG_BOT_TOKEN')
 chat_id = os.environ.get('TG_CHAT_ID')
-
 if not token or not chat_id:
-    print('Telegram secrets not set')
+    print('Secrets not set')
     exit(1)
-
 with open('report.md') as f:
     text = f.read()
-
 if len(text) > 4000:
-    text = text[:2000] + '\n... (truncated)\n\nFull report di repo GitHub'
-
+    text = text[:2000] + '\n... (truncated)'
 url = f'https://api.telegram.org/bot{token}/sendMessage'
-data = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
-r = requests.post(url, data=data)
-print('Telegram sent' if r.json().get('ok') else f'Failed: {r.text}')
-"
+r = requests.post(url, data={'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'})
+print('OK' if r.json().get('ok') else r.text)
+PYEOF
 
       - name: Generate chart
         run: |
@@ -77,21 +66,19 @@ print('Telegram sent' if r.json().get('ok') else f'Failed: {r.text}')
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          python3 -c "
+          python3 << 'PYEOF'
 import requests, os
-
 token = os.environ.get('TG_BOT_TOKEN')
 chat_id = os.environ.get('TG_CHAT_ID')
-
 chart_path = 'analysis/chart_latest.png'
 if os.path.exists(chart_path):
     url = f'https://api.telegram.org/bot{token}/sendPhoto'
     with open(chart_path, 'rb') as f:
         r = requests.post(url, data={'chat_id': chat_id}, files={'photo': f})
-    print('Chart sent' if r.json().get('ok') else f'Chart failed: {r.text}')
+    print('OK' if r.json().get('ok') else r.text)
 else:
-    print('No chart generated')
-"
+    print('No chart')
+PYEOF
 
       - name: Save report as artifact
         uses: actions/upload-artifact@v4
