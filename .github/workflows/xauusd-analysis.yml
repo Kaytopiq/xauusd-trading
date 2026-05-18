@@ -1,9 +1,9 @@
 name: XAUUSD Auto Analysis
 
-on:
+'on':
   schedule:
     - cron: '0 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -41,21 +41,21 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          python3 << 'PYEOF'
-import requests, os
-token = os.environ.get('TG_BOT_TOKEN')
-chat_id = os.environ.get('TG_CHAT_ID')
-if not token or not chat_id:
-    print('Secrets not set')
-    exit(1)
-with open('report.md') as f:
-    text = f.read()
-if len(text) > 4000:
-    text = text[:2000] + '\n... (truncated)'
-url = f'https://api.telegram.org/bot{token}/sendMessage'
-r = requests.post(url, data={'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'})
-print('OK' if r.json().get('ok') else r.text)
-PYEOF
+          python3 -c "
+          import requests, os
+          token = os.environ.get('TG_BOT_TOKEN')
+          chat_id = os.environ.get('TG_CHAT_ID')
+          if not token or not chat_id:
+              print('Secrets not set')
+              exit(1)
+          with open('report.md') as f:
+              text = f.read()
+          if len(text) > 4000:
+              text = text[:2000] + '\n... (truncated)'
+          url = f'https://api.telegram.org/bot{token}/sendMessage'
+          r = requests.post(url, data={'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'})
+          print('OK' if r.json().get('ok') else r.text)
+          "
 
       - name: Generate chart
         run: |
@@ -66,19 +66,19 @@ PYEOF
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          python3 << 'PYEOF'
-import requests, os
-token = os.environ.get('TG_BOT_TOKEN')
-chat_id = os.environ.get('TG_CHAT_ID')
-chart_path = 'analysis/chart_latest.png'
-if os.path.exists(chart_path):
-    url = f'https://api.telegram.org/bot{token}/sendPhoto'
-    with open(chart_path, 'rb') as f:
-        r = requests.post(url, data={'chat_id': chat_id}, files={'photo': f})
-    print('OK' if r.json().get('ok') else r.text)
-else:
-    print('No chart')
-PYEOF
+          python3 -c "
+          import requests, os
+          token = os.environ.get('TG_BOT_TOKEN')
+          chat_id = os.environ.get('TG_CHAT_ID')
+          chart_path = 'analysis/chart_latest.png'
+          if os.path.exists(chart_path):
+              url = f'https://api.telegram.org/bot{token}/sendPhoto'
+              with open(chart_path, 'rb') as f:
+                  r = requests.post(url, data={'chat_id': chat_id}, files={'photo': f})
+              print('OK' if r.json().get('ok') else r.text)
+          else:
+              print('No chart')
+          "
 
       - name: Save report as artifact
         uses: actions/upload-artifact@v4
