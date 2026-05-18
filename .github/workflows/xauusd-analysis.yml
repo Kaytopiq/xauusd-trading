@@ -19,7 +19,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install yfinance mplfinance pandas requests
+          pip install yfinance mplfinance pandas requests playwright
+          sudo playwright install --with-deps chromium 2>&1 | tail -3
 
       - name: Run analysis
         run: |
@@ -60,9 +61,9 @@ jobs:
           print('OK' if r.json().get('ok') else r.text)
           "
 
-      - name: Generate chart
+      - name: Generate chart (TradingView)
         run: |
-          bash scripts/chart.sh 1h 6d "chart_latest"
+          bash scripts/chart_tv.sh 60 "chart_latest"
 
       - name: Send chart to Telegram
         env:
