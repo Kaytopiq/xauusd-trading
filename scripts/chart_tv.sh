@@ -5,7 +5,7 @@
 #   interval: 5, 15, 60, 240 (default: 60)
 #   filename: custom name (default: chart_tv_latest.png)
 
-INTERVAL="${1:-60}"
+INTERVAL="${1:-5}"
 CUSTOM="${2:-chart_tv_latest}"
 FILENAME="analysis/${CUSTOM}.png"
 
@@ -35,7 +35,7 @@ new TradingView.widget({
   hide_top_toolbar: true,
   hide_legend: false,
   save_image: false,
-  studies: ["BB@tv-basicstudies", "RSI@tv-basicstudies", "StochasticRSI@tv-basicstudies"]
+  studies: ["BB@tv-basicstudies", "VWAP@tv-basicstudies", "ZigZag@tv-basicstudies", "RSI@tv-basicstudies"]
 });
 </script>
 </body>
