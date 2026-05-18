@@ -1,0 +1,36 @@
+//@version=6
+indicator("XAUUSD Scalping Template", overlay=true, timeframe="")
+
+// === INPUTS ===
+emaFastLen  = input.int(5,  "EMA Fast")
+emaSlowLen  = input.int(20, "EMA Slow")
+atrLen      = input.int(14, "ATR Length")
+slPoints    = input.float(5.0, "Stop Loss (points)")
+
+// === INDICATORS ===
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+atr     = ta.atr(atrLen)
+
+// === SIGNALS ===
+// Buy: EMA5 crosses above EMA20
+buySignal  = ta.crossover(emaFast, emaSlow)
+// Sell: EMA5 crosses below EMA20
+sellSignal = ta.crossunder(emaFast, emaSlow)
+
+// === PLOTS ===
+plot(emaFast, "EMA Fast", color.blue)
+plot(emaSlow, "EMA Slow", color.red)
+
+// === SIGNAL LABELS ===
+if buySignal
+    label.new(bar_index, low, "BUY", style=label.style_label_up,
+              color=color.new(color.green, 50), textcolor=color.white)
+
+if sellSignal
+    label.new(bar_index, high, "SELL", style=label.style_label_down,
+              color=color.new(color.red, 50), textcolor=color.white)
+
+// === ALERTS ===
+alertcondition(buySignal,  "BUY Signal",  "XAUUSD BUY: EMA crossover")
+alertcondition(sellSignal, "SELL Signal", "XAUUSD SELL: EMA crossunder")
