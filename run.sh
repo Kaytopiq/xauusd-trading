@@ -49,6 +49,9 @@ case "${1:-help}" in
     log)
         bash scripts/log_trade.sh
         ;;
+    monitor)
+        bash scripts/monitor.sh | tee >(save_output "monitor")
+        ;;
     full)
         ts=$(date +%Y%m%d_%H%M%S)
         file="analysis/full_${ts}.txt"
@@ -87,10 +90,11 @@ case "${1:-help}" in
         echo "  signal             Quick signal snapshot + auto-save"
         echo "  news               News/economic calendar gate check"
         echo "  log                Log a trade result"
+        echo "  monitor            Market state detection (NEUTRAL/WATCHING/SIGNAL)"
         echo "  full               Run everything + save to analysis/"
         echo ""
         echo "Examples:"
-        echo "  bash run.sh price"
+        echo "  bash run.sh monitor"
         echo "  bash run.sh signal"
         echo "  bash run.sh session"
         echo "  bash run.sh news"
