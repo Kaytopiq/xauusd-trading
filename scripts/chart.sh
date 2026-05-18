@@ -99,7 +99,7 @@ try:
         volume=True,
         ylabel='Price ($)',
         addplot=ap,
-        figsize=(14, 8),
+        figsize=(11, 7),
         panel_ratios=(3, 1, 1),
         returnfig=True
     )
