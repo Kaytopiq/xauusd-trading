@@ -55,6 +55,9 @@ case "${1:-help}" in
     monitor-loop|loop)
         bash scripts/monitor_loop.sh
         ;;
+    mtf|dashboard)
+        bash scripts/mtf_dashboard.sh 2>/dev/null || echo "  ⚠ MTF dashboard unavailable"
+        ;;
     report)
         bash scripts/report.sh
         ;;
@@ -92,6 +95,10 @@ case "${1:-help}" in
         echo "========================================" > "$file"
         echo "  XAUUSD FULL ANALYSIS — $(date)" >> "$file"
         echo "========================================" >> "$file"
+        echo "" >> "$file"
+        echo "--- MTF DASHBOARD ---" >> "$file"
+        bash "$0" mtf >> "$file" 2>/dev/null
+        echo "" >> "$file"
         bash "$0" session >> "$file" 2>/dev/null
         echo "" >> "$file"
         bash "$SKILL_DIR/fetch_price.sh" >> "$file" 2>/dev/null
@@ -113,7 +120,8 @@ case "${1:-help}" in
         echo "  log                Log a trade result"
         echo "  monitor            Market state detection (NEUTRAL/WATCHING/SIGNAL)"
         echo "  monitor-loop       🔄 Continuous monitoring (runs until SIGNAL)"
-        echo "  report             📄 Generate analysis report + chart"
+        echo "  mtf|dashboard      📊 Multi-timeframe dashboard (5m/15m/1h/4h)"
+  echo "  report             📄 Generate analysis report + chart"
         echo "  review             📊 Weekly review from trade log"
         echo "  chart [int] [per]  📈 Generate candlestick chart (default: 1h 3d)"
         echo "  notify [msg]       🔔 Send notification (local + WhatsApp)"

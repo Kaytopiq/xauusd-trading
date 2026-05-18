@@ -27,6 +27,9 @@ jobs:
           echo "" >> report.md
           echo "Waktu: $(date '+%Y-%m-%d %H:%M UTC')" >> report.md
           echo "" >> report.md
+          echo '--- MTF DASHBOARD ---' >> report.md
+          bash scripts/mtf_dashboard.sh >> report.md 2>/dev/null
+          echo "" >> report.md
           echo '--- SESSION ---' >> report.md
           bash scripts/session.sh >> report.md 2>/dev/null
           echo "" >> report.md
